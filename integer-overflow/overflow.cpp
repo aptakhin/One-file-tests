@@ -15,29 +15,19 @@ unsigned res = 0;
 
 void test_asm(unsigned a) {
 	unsigned int b = 1;
-	
-	const int f = (int) &plus_int;
-	const int g = (int) &plus_bigint;
 
 	__asm {
 		MOV   EAX, a
-		MOV   ECX, f
-		ADD   EAX, b
-		CMOVC ECX, g
-		MOV   f, ECX
-		MOV   res, EAX
+		MOV   EBX, b
+		MOV   ECX, [plus_int]
+		ADD   EAX, EBX
+		CMOVC ECX, [plus_bigint]
+		PUSH  EBX
+		PUSH  EAX
+		CALL  ECX
+		POP   EBX
+		POP   EBX
 	};
-	auto call = (Func) f;
-	call(a, b);
-
-	//char c;
-	//__asm {
-	//	LAHF      // Copy flags to AH
-	//	MOV c, AH
-	//	CLC       // Clear carry flag
-	//};
-	//int overflow = c & 1;
-	//std::cout << overflow << std::endl;
 }
 
 void test_straight(unsigned a) {
@@ -50,7 +40,7 @@ void test_straight(unsigned a) {
 
 int main() {
 
-	const int Tests = 50000000;
+	const int Tests = 100000000;
 
 	auto start = std::chrono::system_clock::now();
 	for (int i = Tests; i; --i)
