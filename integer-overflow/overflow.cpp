@@ -13,41 +13,37 @@ typedef int (*Func)(int, int);
 
 unsigned res = 0;
 
-void test_asm(unsigned a) {
-	unsigned int b = 1;
-
-	__asm {
-		MOV   EAX, a
-		MOV   EBX, b
-		MOV   ECX, [plus_int]
-		ADD   EAX, EBX
-		CMOVC ECX, [plus_bigint]
-		PUSH  EBX
-		PUSH  EAX
-		CALL  ECX
-		POP   EBX
-		POP   EBX
-	};
-}
-
-void test_straight(unsigned a) {
-	unsigned int b = 1;
-	int overflow = 0;
-	if (a > UINT_MAX - b)
-		overflow = 1;
-	res = overflow? plus_bigint(a, b) : plus_int(a, b);
-}
-
 int main() {
-
-	const int Tests = 100000000;
+	const int Tests = 300000000;
 
 	auto start = std::chrono::system_clock::now();
-	for (int i = Tests; i; --i)
-		test_asm(i);
+	for (int i = Tests; i; --i) {
+		unsigned int b = 1;
+
+		__asm {
+			MOV   EAX, i
+			MOV   EBX, b
+			MOV   ECX, [plus_int]
+			ADD   EAX, EBX
+			CMOVC ECX, [plus_bigint]
+			CLC
+			PUSH  EBX
+			PUSH  EAX
+			CALL  ECX
+			POP   EBX
+			POP   EBX
+		};
+	}
+
+	res = 0;
 	auto mid = std::chrono::system_clock::now();
-	for (int i = Tests; i; --i)
-		test_straight(i);
+	for (int i = Tests; i; --i) {
+		unsigned int b = 1;
+		int overflow = 0;
+		if (i > UINT_MAX - b)
+			overflow = 1;
+		res = overflow? plus_bigint(i, b) : plus_int(i, b);
+	}
 	auto end = std::chrono::system_clock::now();
 
 	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(mid - start).count() << std::endl;
